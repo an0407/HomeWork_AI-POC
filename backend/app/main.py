@@ -1,14 +1,27 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 from pathlib import Path
+import traceback
+import logging
 from app.database.mongodb import connect_to_mongo, close_mongo_connection
+from app.routers import homework, solution, practice, flashcard, dashboard
 from app.config import settings
 
+# Configure detailed logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
 app = FastAPI(
-    title="AI Homework Assistant - Phase 1",
-    description="Homework upload, OCR, solution generation, and TTS",
-    version="1.0.0"
+    title="AI Homework Assistant - Phase 1 & 2",
+    description="Homework upload, OCR, solution generation, TTS, practice tests, flashcards, and analytics",
+    version="2.0.0",
+    debug=True  # Enable debug mode for detailed errors
 )
 
 # CORS
@@ -19,6 +32,46 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Custom exception handlers for detailed error messages
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Catch all exceptions and return detailed error information"""
+
+    # Log the full error with traceback
+    logger.error(f"Exception on {request.method} {request.url}")
+    logger.error(f"Error: {str(exc)}")
+    logger.error(traceback.format_exc())
+
+    # Return detailed error response
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={
+            "detail": str(exc),
+            "type": type(exc).__name__,
+            "traceback": traceback.format_exc().split('\n'),
+            "path": str(request.url),
+            "method": request.method
+        }
+    )
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Handle validation errors with detailed information"""
+
+    logger.error(f"Validation error on {request.method} {request.url}")
+    logger.error(f"Errors: {exc.errors()}")
+
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={
+            "detail": "Validation Error",
+            "errors": exc.errors(),
+            "body": str(exc.body) if hasattr(exc, 'body') else None,
+            "path": str(request.url),
+            "method": request.method
+        }
+    )
 
 '''# Database events
 @app.on_event("startup")
@@ -49,24 +102,45 @@ async def startup_db_client():
 @app.on_event("shutdown")
 async def shutdown_db_client():
     await close_mongo_connection()
+app.include_router(practice.router)
+app.include_router(flashcard.router)
+app.include_router(dashboard.router)
 
 # Root endpoint
 @app.get("/")
 async def root():
     return {
-        "message": "AI Homework Assistant API - Phase 1",
-        "version": "1.0.0",
-        "phase": "Core Homework Flow",
-        "endpoints": [
-            "POST /api/homework/upload",
-            "GET /api/homework/{homework_id}",
-            "POST /api/solution/generate",
-            "GET /api/solution/{solution_id}",
-            "GET /api/solution/audio/{audio_filename}",
-            "POST /api/solution/{solution_id}/regenerate-audio"
-        ]
+        "message": "AI Homework Assistant API - Phase 1 & 2",
+        "version": "2.0.0",
+        "phases": ["Core Homework Flow", "Learning Content Generation"],
+        "endpoints": {
+            "phase1": [
+                "POST /api/homework/upload",
+                "GET /api/homework/{homework_id}",
+                "POST /api/solution/generate",
+                "GET /api/solution/{solution_id}",
+                "GET /api/solution/audio/{audio_filename}",
+                "POST /api/solution/{solution_id}/regenerate-audio"
+            ],
+            "phase2": [
+                "POST /api/practice/generate",
+                "GET /api/practice/{test_id}",
+                "POST /api/practice/{test_id}/submit",
+                "GET /api/practice/{test_id}/results/{submission_id}",
+                "GET /api/practice/history",
+                "POST /api/flashcards/generate",
+                "GET /api/flashcards/library",
+                "GET /api/flashcards/{set_id}",
+                "POST /api/flashcards/{set_id}/review",
+                "GET /api/flashcards/{set_id}/progress",
+                "DELETE /api/flashcards/{set_id}",
+                "GET /api/dashboard/stats",
+                "GET /api/dashboard/recent-homework",
+                "GET /api/dashboard/subjects"
+            ]
+        }
     }
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "phase": 1}
+    return {"status": "healthy", "phases": [1, 2]}
