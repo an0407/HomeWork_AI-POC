@@ -39,6 +39,7 @@ async def generate_solution(request: SolutionGenerateRequest):
 
         return SolutionResponse(
             solution_id=str(insert_result.inserted_id),
+            created_at=solution_db.created_at,
             **solution_data
         )
 
