@@ -37,6 +37,7 @@ async def generate_practice_test(request: PracticeGenerateRequest):
 
         return PracticeTestResponse(
             test_id=str(insert_result.inserted_id),
+            created_at=test_db.created_at,
             **test_data
         )
 
@@ -44,6 +45,42 @@ async def generate_practice_test(request: PracticeGenerateRequest):
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/history")
+async def get_practice_history(limit: int = 10, skip: int = 0):
+    """Get practice test submission history"""
+
+    db = get_database()
+
+    submissions = await db.practice_submissions.find()\
+        .sort("submitted_at", -1)\
+        .skip(skip)\
+        .limit(limit)\
+        .to_list(length=limit)
+
+    total = await db.practice_submissions.count_documents({})
+
+    # Enrich with test details
+    for submission in submissions:
+        try:
+            # Convert test_id to ObjectId if it's a string
+            test_id = submission["test_id"]
+            if isinstance(test_id, str):
+                test_id = ObjectId(test_id)
+            test = await db.practice_tests.find_one({"_id": test_id})
+            if test:
+                submission["topic"] = test["topic"]
+                submission["subject"] = test["subject"]
+        except Exception:
+            pass  # Skip if invalid test_id
+        submission["_id"] = str(submission["_id"])
+
+    return {
+        "practice_history": submissions,
+        "total": total
+    }
+
 
 @router.get("/{test_id}")
 async def get_practice_test(test_id: str):
@@ -103,7 +140,7 @@ async def submit_practice_test(test_id: str, request: PracticeSubmitRequest):
             } for r in result_data["results"]],
             score=result_data["score"],
             correct=result_data["correct"],
-            total_questions=result_data["total_questions"],
+            total_questions=result_data["total"],
             time_taken_seconds=result_data["time_taken_seconds"]
         )
 
@@ -113,6 +150,7 @@ async def submit_practice_test(test_id: str, request: PracticeSubmitRequest):
 
         return PracticeSubmitResponse(
             submission_id=str(insert_result.inserted_id),
+            submitted_at=submission_db.submitted_at,
             **result_data
         )
 
@@ -175,36 +213,3 @@ async def get_detailed_results(test_id: str, submission_id: str):
         "submitted_at": submission["submitted_at"]
     }
 
-@router.get("/history")
-async def get_practice_history(limit: int = 10, skip: int = 0):
-    """Get practice test submission history"""
-
-    db = get_database()
-
-    submissions = await db.practice_submissions.find()\
-        .sort("submitted_at", -1)\
-        .skip(skip)\
-        .limit(limit)\
-        .to_list(length=limit)
-
-    total = await db.practice_submissions.count_documents({})
-
-    # Enrich with test details
-    for submission in submissions:
-        try:
-            # Convert test_id to ObjectId if it's a string
-            test_id = submission["test_id"]
-            if isinstance(test_id, str):
-                test_id = ObjectId(test_id)
-            test = await db.practice_tests.find_one({"_id": test_id})
-            if test:
-                submission["topic"] = test["topic"]
-                submission["subject"] = test["subject"]
-        except Exception:
-            pass  # Skip if invalid test_id
-        submission["_id"] = str(submission["_id"])
-
-    return {
-        "practice_history": submissions,
-        "total": total
-    }

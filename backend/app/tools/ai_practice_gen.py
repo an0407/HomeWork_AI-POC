@@ -39,15 +39,19 @@ class AIPracticeGenerator:
             "hi": "Hindi"
         }
 
-        prompt = f"""Create {question_count} practice questions for a student learning about: {topic}
+        prompt = f"""Create practice questions for a student learning about: {topic}
 
 Subject: {subject}
 Difficulty: {difficulty}
 
-Generate a mix of question types:
-- 50% Multiple Choice Questions (MCQ) with exactly 4 options
-- 30% Fill in the blank questions
-- 20% True/False questions
+CRITICAL: Generate EXACTLY {question_count} questions total - no more, no less.
+
+Distribute question types approximately as follows:
+- ~50% Multiple Choice Questions (MCQ) with exactly 4 options
+- ~30% Fill in the blank questions
+- ~20% True/False questions
+
+For small question counts (1-3), adjust the distribution but NEVER exceed {question_count} total questions.
 
 IMPORTANT: Generate ALL content in {language_names[output_language]} language.
 
@@ -101,6 +105,10 @@ Make ALL text content in {language_names[output_language]}.
 
             data = json.loads(response.choices[0].message.content)
             questions = data.get("questions", [])
+
+            # Ensure we don't exceed requested count (fail-safe)
+            if len(questions) > question_count:
+                questions = questions[:question_count]
 
             # Add unique IDs
             for question in questions:

@@ -106,7 +106,7 @@ class PracticeAgent:
             "test_id": test_id,
             "score": round(score, 2),
             "correct": correct_count,
-            "total_questions": total,
+            "total": total,
             "time_taken_seconds": time_taken_seconds,
             "results": results
         }
