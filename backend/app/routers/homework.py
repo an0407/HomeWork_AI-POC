@@ -1,5 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from typing import Optional
+from bson import ObjectId
 from app.agents.homework_agent import HomeworkAgent
 from app.schemas.homework import HomeworkUploadRequest, HomeworkResponse, HomeworkDB
 from app.database.mongodb import get_database
@@ -101,8 +102,14 @@ async def upload_homework(
 async def get_homework(homework_id: str):
     """Get homework details by ID"""
 
+    try:
+        # Convert string ID to ObjectId
+        object_id = ObjectId(homework_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid homework ID format")
+
     db = get_database()
-    homework = await db.homework_submissions.find_one({"_id": homework_id})
+    homework = await db.homework_submissions.find_one({"_id": object_id})
 
     if not homework:
         raise HTTPException(status_code=404, detail="Homework not found")

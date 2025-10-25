@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 from pathlib import Path
+from bson import ObjectId
 from app.agents.solution_agent import SolutionAgent
 from app.schemas.solution import (
     SolutionGenerateRequest,
@@ -50,8 +51,14 @@ async def generate_solution(request: SolutionGenerateRequest):
 async def get_solution(solution_id: str):
     """Get solution details by ID"""
 
+    try:
+        # Convert string ID to ObjectId
+        object_id = ObjectId(solution_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid solution ID format")
+
     db = get_database()
-    solution = await db.solutions.find_one({"_id": solution_id})
+    solution = await db.solutions.find_one({"_id": object_id})
 
     if not solution:
         raise HTTPException(status_code=404, detail="Solution not found")

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException
+from bson import ObjectId
 from app.agents.practice_agent import PracticeAgent
 from app.schemas.practice import (
     PracticeGenerateRequest,
@@ -48,8 +49,13 @@ async def generate_practice_test(request: PracticeGenerateRequest):
 async def get_practice_test(test_id: str):
     """Get practice test (without answers)"""
 
+    try:
+        object_id = ObjectId(test_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid test ID format")
+
     db = get_database()
-    test = await db.practice_tests.find_one({"_id": test_id})
+    test = await db.practice_tests.find_one({"_id": object_id})
 
     if not test:
         raise HTTPException(status_code=404, detail="Practice test not found")
@@ -119,15 +125,21 @@ async def submit_practice_test(test_id: str, request: PracticeSubmitRequest):
 async def get_detailed_results(test_id: str, submission_id: str):
     """Get detailed results for a submission"""
 
+    try:
+        test_object_id = ObjectId(test_id)
+        submission_object_id = ObjectId(submission_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid ID format")
+
     db = get_database()
 
     # Get test
-    test = await db.practice_tests.find_one({"_id": test_id})
+    test = await db.practice_tests.find_one({"_id": test_object_id})
     if not test:
         raise HTTPException(status_code=404, detail="Practice test not found")
 
     # Get submission
-    submission = await db.practice_submissions.find_one({"_id": submission_id})
+    submission = await db.practice_submissions.find_one({"_id": submission_object_id})
     if not submission:
         raise HTTPException(status_code=404, detail="Submission not found")
 
@@ -179,10 +191,17 @@ async def get_practice_history(limit: int = 10, skip: int = 0):
 
     # Enrich with test details
     for submission in submissions:
-        test = await db.practice_tests.find_one({"_id": submission["test_id"]})
-        if test:
-            submission["topic"] = test["topic"]
-            submission["subject"] = test["subject"]
+        try:
+            # Convert test_id to ObjectId if it's a string
+            test_id = submission["test_id"]
+            if isinstance(test_id, str):
+                test_id = ObjectId(test_id)
+            test = await db.practice_tests.find_one({"_id": test_id})
+            if test:
+                submission["topic"] = test["topic"]
+                submission["subject"] = test["subject"]
+        except Exception:
+            pass  # Skip if invalid test_id
         submission["_id"] = str(submission["_id"])
 
     return {

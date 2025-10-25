@@ -1,4 +1,5 @@
 from typing import Dict, List
+from bson import ObjectId
 from app.tools.ai_practice_gen import AIPracticeGenerator
 from app.database.mongodb import get_database
 
@@ -55,7 +56,12 @@ class PracticeAgent:
 
         # Get test
         db = get_database()
-        test = await db.practice_tests.find_one({"_id": test_id})
+        try:
+            object_id = ObjectId(test_id)
+        except Exception:
+            raise ValueError("Invalid test ID format")
+
+        test = await db.practice_tests.find_one({"_id": object_id})
 
         if not test:
             raise ValueError("Practice test not found")

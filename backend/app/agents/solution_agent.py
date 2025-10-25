@@ -1,4 +1,5 @@
 from typing import Dict, Optional
+from bson import ObjectId
 from app.tools.ai_solver import AISolver
 from app.tools.local_tts import LocalTTS
 from app.database.mongodb import get_database
@@ -29,7 +30,12 @@ class SolutionAgent:
         """
         # Get homework from database
         db = get_database()
-        homework = await db.homework_submissions.find_one({"_id": homework_id})
+        try:
+            object_id = ObjectId(homework_id)
+        except Exception:
+            raise ValueError("Invalid homework ID format")
+
+        homework = await db.homework_submissions.find_one({"_id": object_id})
 
         if not homework:
             raise ValueError("Homework not found")
@@ -77,7 +83,12 @@ class SolutionAgent:
         """
         # Get solution from database
         db = get_database()
-        solution = await db.solutions.find_one({"_id": solution_id})
+        try:
+            object_id = ObjectId(solution_id)
+        except Exception:
+            raise ValueError("Invalid solution ID format")
+
+        solution = await db.solutions.find_one({"_id": object_id})
 
         if not solution:
             raise ValueError("Solution not found")
@@ -87,7 +98,7 @@ class SolutionAgent:
 
         # Update solution in database
         await db.solutions.update_one(
-            {"_id": solution_id},
+            {"_id": object_id},
             {"$set": {"audio_url": audio_url, "output_language": language}}
         )
 

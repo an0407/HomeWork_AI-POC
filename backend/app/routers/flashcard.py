@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException
+from bson import ObjectId
 from app.agents.flashcard_agent import FlashcardAgent
 from app.agents.dashboard_agent import DashboardAgent
 from app.schemas.flashcard import (
@@ -69,8 +70,13 @@ async def get_flashcard_library(limit: int = 20, skip: int = 0):
 async def get_flashcard_set(set_id: str):
     """Get specific flashcard set"""
 
+    try:
+        object_id = ObjectId(set_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid flashcard set ID format")
+
     db = get_database()
-    flashcard_set = await db.flashcard_sets.find_one({"_id": set_id})
+    flashcard_set = await db.flashcard_sets.find_one({"_id": object_id})
 
     if not flashcard_set:
         raise HTTPException(status_code=404, detail="Flashcard set not found")
@@ -127,9 +133,14 @@ async def get_review_progress(set_id: str):
 async def delete_flashcard_set(set_id: str):
     """Delete flashcard set"""
 
+    try:
+        object_id = ObjectId(set_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid flashcard set ID format")
+
     db = get_database()
 
-    result = await db.flashcard_sets.delete_one({"_id": set_id})
+    result = await db.flashcard_sets.delete_one({"_id": object_id})
 
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Flashcard set not found")
