@@ -12,10 +12,21 @@ from app.config import settings
 
 # Configure detailed logging
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,  # Set base level to INFO
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
+
+# Set application logger to DEBUG
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# Suppress noisy MongoDB heartbeat logs
+logging.getLogger('pymongo.topology').setLevel(logging.WARNING)
+logging.getLogger('pymongo.connection').setLevel(logging.WARNING)
+logging.getLogger('pymongo.server').setLevel(logging.WARNING)
+
+# Keep application logs at DEBUG
+logging.getLogger('app').setLevel(logging.DEBUG)
 
 app = FastAPI(
     title="AI Homework Assistant - Phase 1, 2 & 4",

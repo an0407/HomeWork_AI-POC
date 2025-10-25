@@ -72,8 +72,8 @@ class HomeworkAgent:
         # Get tesseract language code
         tesseract_code = SUPPORTED_LANGUAGES[input_language]["tesseract_code"]
 
-        # Extract text using OCR
-        extracted_text = self.image_processor.extract_text_with_tesseract(
+        # Extract text using OCR with automatic fallback to EasyOCR
+        extracted_text = self.image_processor.extract_text_with_ocr_fallback(
             image_path,
             tesseract_code
         )

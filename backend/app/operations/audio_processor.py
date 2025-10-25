@@ -2,7 +2,6 @@ import os
 import tempfile
 from pathlib import Path
 from typing import Optional
-import whisper
 from deep_translator import GoogleTranslator
 from pydub import AudioSegment
 
@@ -19,6 +18,8 @@ class AudioProcessor:
     def _ensure_whisper_model(self):
         """Lazy load Whisper model"""
         if self.whisper_model is None:
+            # Lazy import whisper to avoid PyTorch loading on startup
+            import whisper
             # Using 'base' model - good balance of speed and accuracy
             # Options: tiny (~75MB), base (~150MB), small (~500MB), medium (~1.5GB), large (~3GB)
             self.whisper_model = whisper.load_model("base")
