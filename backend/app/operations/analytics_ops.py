@@ -1,5 +1,6 @@
 from typing import Dict, List
 from datetime import datetime, timedelta
+from bson import ObjectId
 
 class AnalyticsOperations:
     """Non-AI analytics and statistics operations"""
@@ -84,8 +85,13 @@ class AnalyticsOperations:
     async def calculate_review_progress(db, set_id: str) -> Dict:
         """Calculate flashcard review progress"""
 
+        try:
+            object_id = ObjectId(set_id)
+        except Exception:
+            return None
+
         # Get flashcard set
-        flashcard_set = await db.flashcard_sets.find_one({"_id": set_id})
+        flashcard_set = await db.flashcard_sets.find_one({"_id": object_id})
 
         if not flashcard_set:
             return None
@@ -111,6 +117,11 @@ class AnalyticsOperations:
         reviewed_cards = len(set([r["card_id"] for r in reviews]))
         avg_confidence = sum(r["confidence_level"] for r in reviews) / len(reviews)
         progress_percentage = (reviewed_cards / total_cards * 100) if total_cards > 0 else 0
+
+        # Convert ObjectId to string in review history
+        for review in reviews:
+            if "_id" in review:
+                review["_id"] = str(review["_id"])
 
         return {
             "total_cards": total_cards,

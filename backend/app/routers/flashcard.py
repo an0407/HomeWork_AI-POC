@@ -35,6 +35,7 @@ async def generate_flashcards(request: FlashcardGenerateRequest):
 
         return FlashcardSetResponse(
             set_id=str(insert_result.inserted_id),
+            created_at=flashcard_db.created_at,
             **flashcard_data
         )
 
