@@ -7,7 +7,7 @@ from pathlib import Path
 import traceback
 import logging
 from app.database.mongodb import connect_to_mongo, close_mongo_connection
-from app.routers import homework, solution, practice, flashcard, dashboard
+from app.routers import homework, solution, practice, flashcard, dashboard, utility
 from app.config import settings
 
 # Configure detailed logging
@@ -18,7 +18,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title="AI Homework Assistant - Phase 1 & 2",
+    title="AI Homework Assistant - Phase 1, 2 & 4",
     description="Homework upload, OCR, solution generation, TTS, practice tests, flashcards, and analytics",
     version="2.0.0",
     debug=True  # Enable debug mode for detailed errors
@@ -105,14 +105,15 @@ async def shutdown_db_client():
 app.include_router(practice.router)
 app.include_router(flashcard.router)
 app.include_router(dashboard.router)
+app.include_router(utility.router)
 
 # Root endpoint
 @app.get("/")
 async def root():
     return {
-        "message": "AI Homework Assistant API - Phase 1 & 2",
+        "message": "AI Homework Assistant API - Phase 1, 2 & 4",
         "version": "2.0.0",
-        "phases": ["Core Homework Flow", "Learning Content Generation"],
+        "phases": ["Core Homework Flow", "Learning Content Generation", "Utility & Management APIs"],
         "endpoints": {
             "phase1": [
                 "POST /api/homework/upload",
@@ -137,10 +138,15 @@ async def root():
                 "GET /api/dashboard/stats",
                 "GET /api/dashboard/recent-homework",
                 "GET /api/dashboard/subjects"
+            ],
+            "phase4": [
+                "DELETE /api/utility/homework/{homework_id}",
+                "DELETE /api/utility/flashcards/{set_id}",
+                "POST /api/utility/batch/generate-solutions"
             ]
         }
     }
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "phases": [1, 2]}
+    return {"status": "healthy", "phases": [1, 2, 4]}
