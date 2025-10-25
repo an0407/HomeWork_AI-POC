@@ -18,7 +18,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title="AI Homework Assistant - Phase 1 & 2",
+    title="AI Homework Assistant - Phase 1, 2 & 4",
     description="Homework upload, OCR, solution generation, TTS, practice tests, flashcards, and analytics",
     version="2.0.0",
     debug=True  # Enable debug mode for detailed errors
@@ -99,9 +99,9 @@ app.include_router(utility.router)
 @app.get("/")
 async def root():
     return {
-        "message": "AI Homework Assistant API - Phase 1 & 2",
+        "message": "AI Homework Assistant API - Phase 1, 2 & 4",
         "version": "2.0.0",
-        "phases": ["Core Homework Flow", "Learning Content Generation"],
+        "phases": ["Core Homework Flow", "Learning Content Generation", "Utility & Management APIs"],
         "endpoints": {
             "phase1": [
                 "POST /api/homework/upload",
@@ -126,6 +126,11 @@ async def root():
                 "GET /api/dashboard/stats",
                 "GET /api/dashboard/recent-homework",
                 "GET /api/dashboard/subjects"
+            ],
+            "phase4": [
+                "DELETE /api/utility/homework/{homework_id}",
+                "DELETE /api/utility/flashcards/{set_id}",
+                "POST /api/utility/batch/generate-solutions"
             ]
         }
     }
