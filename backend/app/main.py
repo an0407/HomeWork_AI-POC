@@ -7,7 +7,7 @@ from pathlib import Path
 import traceback
 import logging
 from app.database.mongodb import connect_to_mongo, close_mongo_connection
-from app.routers import homework, solution, practice, flashcard, dashboard
+from app.routers import homework, solution, practice, flashcard, dashboard, utility
 from app.config import settings
 
 # Configure detailed logging
@@ -93,6 +93,7 @@ app.include_router(solution.router)
 app.include_router(practice.router)
 app.include_router(flashcard.router)
 app.include_router(dashboard.router)
+app.include_router(utility.router)
 
 # Root endpoint
 @app.get("/")
@@ -131,4 +132,4 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "phases": [1, 2]}
+    return {"status": "healthy", "phases": [1, 2, 4]}
