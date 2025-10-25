@@ -5,6 +5,7 @@ from bson import ObjectId
 
 
 class UserPreferences(BaseModel):
+    """User preference settings"""
     language: Literal["en", "ta", "hi"] = "en"
     voice_language: Literal["en", "ta", "hi"] = "en"
     difficulty_preference: Literal["auto", "easy", "medium", "hard"] = "auto"
@@ -16,13 +17,15 @@ class UserPreferences(BaseModel):
 
 
 class PreferencesResponse(BaseModel):
+    """Response model for preferences"""
     preferences: UserPreferences
     updated_at: Optional[datetime] = None
 
 
 class PreferencesDB(BaseModel):
+    """Database model for preferences"""
     id: Optional[str] = Field(alias="_id", default=None)
-    is_default: bool = True
+    is_default: bool = True  # For POC without auth
     language: str
     voice_language: str
     difficulty_preference: str
@@ -40,5 +43,6 @@ class PreferencesDB(BaseModel):
 
 
 class LanguageInfo(BaseModel):
+    """Language information"""
     code: str
     name: str
