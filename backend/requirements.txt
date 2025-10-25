@@ -1,14 +1,38 @@
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-pymongo==4.6.0
-motor==3.3.2
-python-multipart==0.0.6
-pillow==10.1.0
-pytesseract==0.3.10
-opencv-python==4.8.1.78
-numpy==1.26.2
+# Core FastAPI & Web Server
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+python-multipart>=0.0.12
+
+# Database
+pymongo>=4.10.0
+motor>=3.6.0
+
+# Image Processing
+pillow>=11.0.0
+pytesseract>=0.3.13
+opencv-python>=4.10.0
+numpy>=2.0.0
+
+# OpenAI & AI
 openai>=1.54.0
-python-dotenv==1.0.0
-pydantic==2.5.0
-pydantic-settings==2.1.0
-aiofiles==23.2.1
+
+# Configuration
+python-dotenv>=1.0.1
+pydantic>=2.10.0
+pydantic-settings>=2.6.0
+
+# File Operations
+aiofiles>=24.1.0
+
+# Audio Processing & TTS
+gTTS>=2.5.3
+deep-translator>=1.11.4
+SpeechRecognition>=3.11.0
+pydub>=0.25.1
+
+# Whisper dependencies (install whisper separately)
+torch>=2.5.0
+torchaudio>=2.5.0
+tiktoken>=0.8.0
+more-itertools>=10.5.0
+numba>=0.60.0

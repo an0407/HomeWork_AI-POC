@@ -19,6 +19,7 @@ class PyObjectId(ObjectId):
         field_schema.update(type="string")
 
 class HomeworkUploadRequest(BaseModel):
+    input_type: Literal["image", "text", "audio", "webcam"] = "image"
     input_language: Literal["en", "ta", "hi"] = "en"
     output_language: Literal["en", "ta", "hi"] = "en"
 
@@ -26,6 +27,7 @@ class HomeworkResponse(BaseModel):
     homework_id: str
     extracted_text: str
     subject: str
+    input_type: str
     input_language: str
     output_language: str
     status: str
@@ -33,7 +35,9 @@ class HomeworkResponse(BaseModel):
 
 class HomeworkDB(BaseModel):
     id: Optional[PyObjectId] = Field(alias="_id", default=None)
-    image_path: str
+    input_type: str  # image, text, audio, webcam
+    image_path: Optional[str] = None  # Only for image/webcam inputs
+    audio_path: Optional[str] = None  # Only for audio inputs
     extracted_text: str
     subject: str
     input_language: str

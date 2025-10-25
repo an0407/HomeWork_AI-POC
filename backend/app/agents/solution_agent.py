@@ -1,6 +1,6 @@
 from typing import Dict, Optional
 from app.tools.ai_solver import AISolver
-from app.tools.ai_tts import AITTS
+from app.tools.local_tts import LocalTTS
 from app.database.mongodb import get_database
 
 class SolutionAgent:
@@ -8,7 +8,7 @@ class SolutionAgent:
 
     def __init__(self):
         self.ai_solver = AISolver()
-        self.ai_tts = AITTS()
+        self.tts = LocalTTS()  # Using free gTTS instead of expensive OpenAI TTS
 
     async def generate_solution(
         self,
@@ -45,7 +45,7 @@ class SolutionAgent:
         # Generate audio if requested
         audio_url = None
         if generate_audio:
-            audio_url = self.ai_tts.generate_audio(
+            audio_url = self.tts.generate_audio(
                 solution_data,
                 output_language
             )
@@ -83,7 +83,7 @@ class SolutionAgent:
             raise ValueError("Solution not found")
 
         # Generate new audio
-        audio_url = self.ai_tts.generate_audio(solution, language)
+        audio_url = self.tts.generate_audio(solution, language)
 
         # Update solution in database
         await db.solutions.update_one(
