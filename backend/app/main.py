@@ -1,15 +1,27 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 from pathlib import Path
+import traceback
+import logging
 from app.database.mongodb import connect_to_mongo, close_mongo_connection
 from app.routers import homework, solution, practice, flashcard, dashboard
 from app.config import settings
 
+# Configure detailed logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
 app = FastAPI(
     title="AI Homework Assistant - Phase 1 & 2",
     description="Homework upload, OCR, solution generation, TTS, practice tests, flashcards, and analytics",
-    version="2.0.0"
+    version="2.0.0",
+    debug=True  # Enable debug mode for detailed errors
 )
 
 # CORS
@@ -20,6 +32,46 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Custom exception handlers for detailed error messages
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Catch all exceptions and return detailed error information"""
+
+    # Log the full error with traceback
+    logger.error(f"Exception on {request.method} {request.url}")
+    logger.error(f"Error: {str(exc)}")
+    logger.error(traceback.format_exc())
+
+    # Return detailed error response
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={
+            "detail": str(exc),
+            "type": type(exc).__name__,
+            "traceback": traceback.format_exc().split('\n'),
+            "path": str(request.url),
+            "method": request.method
+        }
+    )
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Handle validation errors with detailed information"""
+
+    logger.error(f"Validation error on {request.method} {request.url}")
+    logger.error(f"Errors: {exc.errors()}")
+
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={
+            "detail": "Validation Error",
+            "errors": exc.errors(),
+            "body": str(exc.body) if hasattr(exc, 'body') else None,
+            "path": str(request.url),
+            "method": request.method
+        }
+    )
 
 # Database events
 @app.on_event("startup")
