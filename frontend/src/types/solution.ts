@@ -6,6 +6,7 @@ export interface SolutionStep {
 
 export interface Solution {
   solution_id: string;
+  homework_id: string;
   question: string;
   subject: string;
   solution_steps: SolutionStep[];
@@ -20,4 +21,5 @@ export interface SolutionGenerateRequest {
   homework_id: string;
   generate_audio: boolean;
   output_language: string;
+  audio_language?: string;
 }

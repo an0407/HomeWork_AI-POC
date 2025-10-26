@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Volume2, RefreshCw, BookOpen } from 'lucide-react';
+import { ArrowLeft, Volume2, RefreshCw, BookOpen, Sparkles, ExternalLink } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { solutionApi } from '@/services/solutionApi';
+import { flashcardApi } from '@/services/flashcardApi';
+import { FeedbackForm } from '@/components/FeedbackForm';
 import { SUBJECTS, LANGUAGES } from '@/utils/constants';
 import { formatDate } from '@/utils/formatters';
 import type { Solution } from '@/types/solution';
+import type { Language } from '@/types/homework';
 
 export function SolutionPage() {
   const { id } = useParams<{ id: string }>();
@@ -15,6 +18,17 @@ export function SolutionPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+
+  // Flashcard generation state
+  const [isGeneratingFlashcards, setIsGeneratingFlashcards] = useState(false);
+  const [flashcardSetId, setFlashcardSetId] = useState<string | null>(null);
+  const [flashcardError, setFlashcardError] = useState<string | null>(null);
+
+  // Audio generation state
+  const [showAudioDialog, setShowAudioDialog] = useState(false);
+  const [selectedAudioLang, setSelectedAudioLang] = useState<Language>('en');
+  const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
+  const [audioGenerationError, setAudioGenerationError] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -41,6 +55,50 @@ export function SolutionPage() {
       audio.play();
       setIsPlayingAudio(true);
       audio.onended = () => setIsPlayingAudio(false);
+    }
+  };
+
+  const handleGenerateFlashcards = async () => {
+    if (!solution) return;
+
+    setIsGeneratingFlashcards(true);
+    setFlashcardError(null);
+    setFlashcardSetId(null);
+
+    try {
+      const response = await flashcardApi.generateFlashcards({
+        homework_id: solution.homework_id,
+        num_cards: 5,
+        output_language: solution.output_language,
+      });
+
+      setFlashcardSetId(response.flashcard_set.set_id);
+    } catch (err) {
+      setFlashcardError(err instanceof Error ? err.message : 'Failed to generate flashcards');
+    } finally {
+      setIsGeneratingFlashcards(false);
+    }
+  };
+
+  const handleGenerateAudio = async () => {
+    if (!solution) return;
+
+    setIsGeneratingAudio(true);
+    setAudioGenerationError(null);
+
+    try {
+      const response = await solutionApi.regenerateAudio(
+        solution.solution_id,
+        selectedAudioLang
+      );
+
+      // Update solution with new audio URL
+      setSolution({ ...solution, audio_url: response.audio_url });
+      setShowAudioDialog(false);
+    } catch (err) {
+      setAudioGenerationError(err instanceof Error ? err.message : 'Failed to generate audio');
+    } finally {
+      setIsGeneratingAudio(false);
     }
   };
 
@@ -105,12 +163,31 @@ export function SolutionPage() {
             </p>
           </div>
 
-          {solution.audio_url && (
-            <Button onClick={handlePlayAudio} disabled={isPlayingAudio}>
-              <Volume2 className="h-4 w-4 mr-2" />
-              {isPlayingAudio ? 'Playing...' : 'Play Audio'}
-            </Button>
-          )}
+          {/* Audio Actions */}
+          <div className="flex gap-2 flex-wrap">
+            {solution.audio_url ? (
+              <>
+                <Button onClick={handlePlayAudio} disabled={isPlayingAudio}>
+                  <Volume2 className="h-4 w-4 mr-2" />
+                  {isPlayingAudio ? 'Playing...' : 'Play Audio'}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowAudioDialog(true)}
+                >
+                  Regenerate in Different Language
+                </Button>
+              </>
+            ) : (
+              <Button
+                variant="outline"
+                onClick={() => setShowAudioDialog(true)}
+              >
+                <Volume2 className="h-4 w-4 mr-2" />
+                Generate Audio
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -191,8 +268,107 @@ export function SolutionPage() {
         </CardContent>
       </Card>
 
+      {/* Feedback Form */}
+      <div className="mb-6">
+        <FeedbackForm solutionId={solution.solution_id} />
+      </div>
+
+      {/* Flashcard Generation Messages */}
+      {flashcardError && (
+        <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          {flashcardError}
+        </div>
+      )}
+
+      {flashcardSetId && (
+        <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5" />
+            <span>Flashcards generated successfully!</span>
+          </div>
+          <Link to={`/flashcards/study/${flashcardSetId}`}>
+            <Button variant="outline" size="sm" className="bg-white">
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Study Now
+            </Button>
+          </Link>
+        </div>
+      )}
+
+      {/* Audio Generation Dialog */}
+      {showAudioDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+          <Card className="w-full max-w-md mx-4">
+            <CardHeader>
+              <CardTitle>
+                {solution.audio_url ? 'Regenerate Audio' : 'Generate Audio'}
+              </CardTitle>
+              <CardDescription>
+                Choose the language for voice narration
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {audioGenerationError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                  {audioGenerationError}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Audio Language
+                </label>
+                <select
+                  value={selectedAudioLang}
+                  onChange={(e) => setSelectedAudioLang(e.target.value as Language)}
+                  className="w-full h-10 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  disabled={isGeneratingAudio}
+                >
+                  {Object.entries(LANGUAGES).map(([code, lang]) => (
+                    <option key={code} value={code}>
+                      {lang.name} ({lang.nativeName})
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-2">
+                  The audio will explain the solution in the selected language
+                </p>
+              </div>
+
+              <div className="flex gap-3 justify-end pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowAudioDialog(false);
+                    setAudioGenerationError(null);
+                  }}
+                  disabled={isGeneratingAudio}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleGenerateAudio}
+                  disabled={isGeneratingAudio}
+                >
+                  {isGeneratingAudio ? 'Generating...' : solution.audio_url ? 'Regenerate' : 'Generate'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Actions */}
       <div className="flex flex-col sm:flex-row gap-3">
+        <Button
+          variant="default"
+          className="flex-1"
+          onClick={handleGenerateFlashcards}
+          disabled={isGeneratingFlashcards || !!flashcardSetId}
+        >
+          <Sparkles className="h-4 w-4 mr-2" />
+          {isGeneratingFlashcards ? 'Generating...' : flashcardSetId ? 'Flashcards Created' : 'Generate Flashcards'}
+        </Button>
         <Link to="/scan" className="flex-1">
           <Button variant="outline" className="w-full">
             <RefreshCw className="h-4 w-4 mr-2" />
@@ -200,7 +376,7 @@ export function SolutionPage() {
           </Button>
         </Link>
         <Link to="/practice" className="flex-1">
-          <Button className="w-full">
+          <Button variant="outline" className="w-full">
             Practice Similar Questions
           </Button>
         </Link>

@@ -10,14 +10,16 @@ class SolutionStep(BaseModel):
 
 class SolutionGenerateRequest(BaseModel):
     homework_id: str
-    generate_audio: bool = True
+    generate_audio: bool = False
     output_language: Literal["en", "ta", "hi"] = "en"
+    audio_language: Optional[Literal["en", "ta", "hi"]] = None
 
 class RegenerateAudioRequest(BaseModel):
     language: Literal["en", "ta", "hi"]
 
 class SolutionResponse(BaseModel):
     solution_id: str
+    homework_id: str
     question: str
     subject: str
     solution_steps: List[SolutionStep]

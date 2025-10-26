@@ -15,7 +15,8 @@ class SolutionAgent:
         self,
         homework_id: str,
         generate_audio: bool,
-        output_language: str
+        output_language: str,
+        audio_language: Optional[str] = None
     ) -> Dict:
         """
         Generate solution for homework
@@ -23,7 +24,8 @@ class SolutionAgent:
         Args:
             homework_id: Homework document ID
             generate_audio: Whether to generate audio
-            output_language: Language for solution
+            output_language: Language for solution text
+            audio_language: Language for audio (if None, uses output_language)
 
         Returns:
             Dict with solution data including audio URL if requested
@@ -51,9 +53,11 @@ class SolutionAgent:
         # Generate audio if requested
         audio_url = None
         if generate_audio:
+            # Use audio_language if provided, otherwise fall back to output_language
+            audio_lang = audio_language if audio_language else output_language
             audio_url = self.tts.generate_audio(
                 solution_data,
-                output_language
+                audio_lang
             )
 
         return {
@@ -96,10 +100,10 @@ class SolutionAgent:
         # Generate new audio
         audio_url = self.tts.generate_audio(solution, language)
 
-        # Update solution in database
+        # Update solution in database (only update audio_url, not output_language)
         await db.solutions.update_one(
             {"_id": object_id},
-            {"$set": {"audio_url": audio_url, "output_language": language}}
+            {"$set": {"audio_url": audio_url}}
         )
 
         return audio_url

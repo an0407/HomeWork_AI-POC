@@ -24,7 +24,8 @@ async def generate_solution(request: SolutionGenerateRequest):
         solution_data = await solution_agent.generate_solution(
             homework_id=request.homework_id,
             generate_audio=request.generate_audio,
-            output_language=request.output_language
+            output_language=request.output_language,
+            audio_language=request.audio_language
         )
 
         # Save to database

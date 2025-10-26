@@ -5,6 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { WebcamCapture } from '@/components/WebcamCapture';
+import { AudioRecorder } from '@/components/AudioRecorder';
 import { homeworkApi } from '@/services/homeworkApi';
 import { solutionApi } from '@/services/solutionApi';
 import { INPUT_TYPES, LANGUAGES } from '@/utils/constants';
@@ -23,7 +25,14 @@ export function ScanHomeworkPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [textInput, setTextInput] = useState('');
   const [audioFile, setAudioFile] = useState<File | null>(null);
-  const [isRecording, setIsRecording] = useState(false);
+
+  // Capture/Recording mode states
+  const [showWebcamCapture, setShowWebcamCapture] = useState(false);
+  const [showAudioRecorder, setShowAudioRecorder] = useState(false);
+
+  // Audio generation settings
+  const [generateAudio, setGenerateAudio] = useState(false);
+  const [audioLanguage, setAudioLanguage] = useState<Language>('en');
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -49,6 +58,20 @@ export function ScanHomeworkPage() {
       setAudioFile(file);
       setError(null);
     }
+  };
+
+  // Handle webcam capture
+  const handleWebcamCapture = (file: File) => {
+    setImageFile(file);
+    setShowWebcamCapture(false);
+    setError(null);
+  };
+
+  // Handle audio recording
+  const handleAudioRecording = (file: File) => {
+    setAudioFile(file);
+    setShowAudioRecorder(false);
+    setError(null);
   };
 
   const handleSubmit = async () => {
@@ -87,8 +110,9 @@ export function ScanHomeworkPage() {
       // Generate solution
       const solution = await solutionApi.generateSolution({
         homework_id: homeworkData.homework_id,
-        generate_audio: true,
+        generate_audio: generateAudio,
         output_language: outputLanguage,
+        audio_language: generateAudio ? audioLanguage : undefined,
       });
 
       // Navigate to solution page
@@ -125,13 +149,45 @@ export function ScanHomeworkPage() {
       case 'webcam':
         return (
           <div className="space-y-4">
-            <div className="border-2 border-gray-300 rounded-lg p-8 text-center">
-              <Camera className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 mb-4">Webcam capture coming soon!</p>
-              <p className="text-sm text-gray-500">
-                For now, please use the image upload option
-              </p>
-            </div>
+            {showWebcamCapture ? (
+              <WebcamCapture
+                onCapture={handleWebcamCapture}
+                onCancel={() => setShowWebcamCapture(false)}
+              />
+            ) : imageFile ? (
+              <div className="space-y-4">
+                <div className="border-2 border-green-300 rounded-lg p-6 bg-green-50">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Camera className="h-5 w-5 text-green-600" />
+                      <span className="font-medium text-green-900">
+                        Photo captured successfully!
+                      </span>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setImageFile(null);
+                        setShowWebcamCapture(true);
+                      }}
+                    >
+                      Retake
+                    </Button>
+                  </div>
+                  <p className="text-sm text-green-700">{imageFile.name}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                <Camera className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600 mb-4">Capture a photo of your homework</p>
+                <Button onClick={() => setShowWebcamCapture(true)}>
+                  <Camera className="h-4 w-4 mr-2" />
+                  Open Camera
+                </Button>
+              </div>
+            )}
           </div>
         );
 
@@ -153,23 +209,69 @@ export function ScanHomeworkPage() {
       case 'audio':
         return (
           <div className="space-y-4">
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-              <Mic className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <Input
-                type="file"
-                accept="audio/*"
-                onChange={handleAudioUpload}
-                className="max-w-xs mx-auto"
+            {showAudioRecorder ? (
+              <AudioRecorder
+                onRecordingComplete={handleAudioRecording}
+                onCancel={() => setShowAudioRecorder(false)}
+                maxDurationSeconds={120}
               />
-              {audioFile && (
-                <p className="mt-2 text-sm text-green-600">
-                  Selected: {audioFile.name}
-                </p>
-              )}
-              <p className="text-sm text-gray-500 mt-4">
-                Or record audio (coming soon)
-              </p>
-            </div>
+            ) : audioFile ? (
+              <div className="space-y-4">
+                <div className="border-2 border-green-300 rounded-lg p-6 bg-green-50">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Mic className="h-5 w-5 text-green-600" />
+                      <span className="font-medium text-green-900">
+                        Audio ready!
+                      </span>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setAudioFile(null);
+                      }}
+                    >
+                      Clear
+                    </Button>
+                  </div>
+                  <p className="text-sm text-green-700">{audioFile.name}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Record Audio Option */}
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                  <Mic className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600 mb-4">Record your question</p>
+                  <Button onClick={() => setShowAudioRecorder(true)}>
+                    <Mic className="h-4 w-4 mr-2" />
+                    Start Recording
+                  </Button>
+                </div>
+
+                {/* Divider */}
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-300"></div>
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-2 bg-white text-gray-500">or upload audio file</span>
+                  </div>
+                </div>
+
+                {/* Upload Audio Option */}
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                  <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <Input
+                    type="file"
+                    accept="audio/*"
+                    onChange={handleAudioUpload}
+                    className="max-w-xs mx-auto"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         );
 
@@ -252,6 +354,54 @@ export function ScanHomeworkPage() {
           </select>
         </div>
       </div>
+
+      {/* Audio Generation Settings */}
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <label className="text-sm font-medium text-gray-900">
+                Generate Audio Explanation
+              </label>
+              <p className="text-xs text-gray-500 mt-1">
+                Add voice narration to the solution (can be generated later if needed)
+              </p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={generateAudio}
+                onChange={(e) => setGenerateAudio(e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+
+          {/* Audio Language Selector - Only shown if generateAudio is true */}
+          {generateAudio && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Audio Language
+              </label>
+              <select
+                value={audioLanguage}
+                onChange={(e) => setAudioLanguage(e.target.value as Language)}
+                className="w-full h-10 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
+              >
+                {Object.entries(LANGUAGES).map(([code, lang]) => (
+                  <option key={code} value={code}>
+                    {lang.name} ({lang.nativeName})
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 mt-2">
+                Choose the language for voice narration (can be different from answer language)
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Input Area */}
       {selectedMethod && (
