@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Volume2, RefreshCw, BookOpen, Sparkles, ExternalLink } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -30,11 +30,25 @@ export function SolutionPage() {
   const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
   const [audioGenerationError, setAudioGenerationError] = useState<string | null>(null);
 
+  // Audio element ref for playback control
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
   useEffect(() => {
     if (id) {
       loadSolution(id);
     }
   }, [id]);
+
+  // Cleanup audio on component unmount
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        audioRef.current = null;
+      }
+    };
+  }, []);
 
   const loadSolution = async (solutionId: string) => {
     setIsLoading(true);
@@ -49,12 +63,38 @@ export function SolutionPage() {
     }
   };
 
-  const handlePlayAudio = () => {
-    if (solution?.audio_url) {
+  const handlePlayAudio = async () => {
+    if (!solution?.audio_url) return;
+
+    try {
+      // Stop any existing audio
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+
+      // Create new audio element
       const audio = new Audio(solutionApi.getAudioUrl(solution.audio_url));
-      audio.play();
+      audioRef.current = audio;
+
+      // Setup event handlers
+      audio.onended = () => {
+        setIsPlayingAudio(false);
+        audioRef.current = null;
+      };
+
+      audio.onerror = (e) => {
+        setIsPlayingAudio(false);
+        setError('Failed to play audio. Please try regenerating.');
+        audioRef.current = null;
+      };
+
+      // Play audio (this returns a Promise)
+      await audio.play();
       setIsPlayingAudio(true);
-      audio.onended = () => setIsPlayingAudio(false);
+    } catch (err) {
+      setIsPlayingAudio(false);
+      setError(err instanceof Error ? err.message : 'Failed to play audio');
     }
   };
 
@@ -72,7 +112,7 @@ export function SolutionPage() {
         output_language: solution.output_language,
       });
 
-      setFlashcardSetId(response.flashcard_set.set_id);
+      setFlashcardSetId(response.set_id);
     } catch (err) {
       setFlashcardError(err instanceof Error ? err.message : 'Failed to generate flashcards');
     } finally {
@@ -82,6 +122,14 @@ export function SolutionPage() {
 
   const handleGenerateAudio = async () => {
     if (!solution) return;
+
+    // Stop any playing audio and reset state
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current = null;
+    }
+    setIsPlayingAudio(false); // Reset playing state
 
     setIsGeneratingAudio(true);
     setAudioGenerationError(null);

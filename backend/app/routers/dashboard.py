@@ -19,7 +19,7 @@ async def get_recent_homework(limit: int = 10):
     homework_list = await dashboard_agent.get_recent_homework(limit)
 
     return {
-        "homework": homework_list
+        "recent_homework": homework_list
     }
 
 @router.get("/subjects")

@@ -426,8 +426,8 @@ export function LibraryPage() {
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        {item.has_solution && (
-                          <Link to={`/solution/${item.homework_id}`}>
+                        {item.has_solution && item.solution_id && (
+                          <Link to={`/solution/${item.solution_id}`}>
                             <Button variant="outline" size="sm">
                               View Solution
                             </Button>

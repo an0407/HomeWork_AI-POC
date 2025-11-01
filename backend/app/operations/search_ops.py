@@ -57,6 +57,7 @@ class SearchOperations:
 
             hw["homework_id"] = hw_id
             hw["has_solution"] = solution is not None
+            hw["solution_id"] = str(solution["_id"]) if solution else None
             # remove fields which are not JSON serializable or sensitive
             hw.pop("_id", None)
             hw.pop("image_path", None)

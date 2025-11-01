@@ -9,20 +9,10 @@ class AudioProcessor:
     """Audio processing for speech-to-text and translation"""
 
     def __init__(self):
-        # Initialize Whisper model (base model for speed, can use 'small' or 'medium' for better accuracy)
-        # Model will be downloaded on first use (~150MB for base)
-        self.whisper_model = None
+        # Using SpeechRecognition with Google's free Web Speech API
+        # No model downloads needed, no PyTorch dependency
         self.translator_hi = GoogleTranslator(source='hi', target='en')
         self.translator_ta = GoogleTranslator(source='ta', target='en')
-
-    def _ensure_whisper_model(self):
-        """Lazy load Whisper model"""
-        if self.whisper_model is None:
-            # Lazy import whisper to avoid PyTorch loading on startup
-            import whisper
-            # Using 'base' model - good balance of speed and accuracy
-            # Options: tiny (~75MB), base (~150MB), small (~500MB), medium (~1.5GB), large (~3GB)
-            self.whisper_model = whisper.load_model("base")
 
     @staticmethod
     def convert_to_wav(audio_file_path: str) -> str:
@@ -57,7 +47,9 @@ class AudioProcessor:
         language_code: str = "en"
     ) -> str:
         """
-        Convert audio to text using OpenAI Whisper
+        Convert audio to text using SpeechRecognition (Google Web Speech API)
+
+        No PyTorch dependency, uses free Google API for transcription
 
         Args:
             audio_file_path: Path to audio file
@@ -66,30 +58,33 @@ class AudioProcessor:
         Returns:
             Transcribed text
         """
-        self._ensure_whisper_model()
+        import speech_recognition as sr
 
-        # Map our language codes to Whisper language codes
-        whisper_lang_map = {
-            "en": "en",
-            "ta": "ta",
-            "hi": "hi"
+        # Map language codes to Google Speech Recognition language codes
+        language_map = {
+            "en": "en-US",
+            "hi": "hi-IN",
+            "ta": "ta-IN"
         }
-        whisper_lang = whisper_lang_map.get(language_code, "en")
+
+        google_lang = language_map.get(language_code, "en-US")
 
         try:
-            # Transcribe audio
-            # Note: openai-whisper handles various audio formats automatically
-            result = self.whisper_model.transcribe(
-                audio_file_path,
-                language=whisper_lang,
-                fp16=False  # Use fp32 for CPU compatibility
-            )
+            # Initialize recognizer
+            recognizer = sr.Recognizer()
 
-            # Extract transcribed text
-            transcribed_text = result["text"]
+            # Load audio file and transcribe
+            with sr.AudioFile(audio_file_path) as source:
+                audio = recognizer.record(source)
 
-            return transcribed_text.strip()
+            # Use Google Speech Recognition API
+            text = recognizer.recognize_google(audio, language=google_lang)
+            return text.strip()
 
+        except sr.UnknownValueError:
+            raise Exception(f"Could not understand audio in {language_code}")
+        except sr.RequestError as e:
+            raise Exception(f"Google Speech Recognition service error: {str(e)}")
         except Exception as e:
             raise Exception(f"Error transcribing audio: {str(e)}")
 

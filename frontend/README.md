@@ -18,7 +18,7 @@ npm install tailwindcss-animate
 npm run dev
 ```
 
-The app will be available at http://localhost:3000
+The app will be available at http://192.168.5.99:3000
 
 ## Project Structure
 
@@ -155,7 +155,7 @@ uvicorn app.main:app --reload
 
 2. **Update environment variables in frontend/.env if needed:**
 ```
-VITE_API_URL=http://localhost:8000
+VITE_API_URL=http://192.168.5.99:8000
 ```
 
 3. **Test the integration:**
@@ -291,7 +291,7 @@ npm run dev
 ```
 
 ### 2. Test Pages
-- Visit http://localhost:3000
+- Visit http://192.168.5.99:3000
 - Navigate through all pages using sidebar
 - Test input method selection on `/scan`
 - Test responsive design (resize browser)
@@ -333,7 +333,7 @@ Then test the full flow:
 # backend/app/main.py
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],
+    allow_origins=["http://192.168.5.99:3000", "http://192.168.5.99:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -23,7 +23,7 @@ function App() {
           <Route path="/solution/:id" element={<SolutionPage />} />
           <Route path="/practice" element={<PracticeConfigPage />} />
           <Route path="/practice/test/:id" element={<PracticeTestPage />} />
-          <Route path="/practice/results/:id" element={<PracticeResultsPage />} />
+          <Route path="/practice/results/:testId/:submissionId" element={<PracticeResultsPage />} />
           <Route path="/flashcards" element={<FlashcardsLibraryPage />} />
           <Route path="/flashcards/study/:id" element={<FlashcardStudyPage />} />
           <Route path="/library" element={<LibraryPage />} />

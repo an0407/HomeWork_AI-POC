@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:8000',
+  baseURL: 'http://192.168.5.99:8000',
 });
 
 // Request types
@@ -12,27 +12,24 @@ export interface GenerateFlashcardsRequest {
 }
 
 // Response types
-export interface FlashcardItem {
-  card_number: number;
-  question: string;
-  answer: string;
-  hint?: string;
+export interface Flashcard {
+  card_id: string;
+  front: string;
+  back: string;
+  difficulty: 'easy' | 'medium' | 'hard';
 }
 
 export interface FlashcardSet {
   set_id: string;
-  homework_id: string;
   title: string;
   subject: string;
-  cards: FlashcardItem[];
+  output_language: string;
+  cards: Flashcard[];
+  total_cards: number;
   created_at: string;
 }
 
-export interface GenerateFlashcardsResponse {
-  success: boolean;
-  message: string;
-  flashcard_set: FlashcardSet;
-}
+export interface GenerateFlashcardsResponse extends FlashcardSet {}
 
 export interface GetFlashcardSetResponse {
   success: boolean;

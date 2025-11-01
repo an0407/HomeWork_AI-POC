@@ -108,9 +108,9 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 The API will be available at:
-- **API**: http://localhost:8000
-- **Interactive Docs**: http://localhost:8000/docs
-- **Alternative Docs**: http://localhost:8000/redoc
+- **API**: http://192.168.5.99:8000
+- **Interactive Docs**: http://192.168.5.99:8000/docs
+- **Alternative Docs**: http://192.168.5.99:8000/redoc
 
 ## API Endpoints
 
@@ -128,7 +128,7 @@ POST /api/homework/upload
 
 **Example:**
 ```bash
-curl -X POST "http://localhost:8000/api/homework/upload" \
+curl -X POST "http://192.168.5.99:8000/api/homework/upload" \
   -F "file=@homework.jpg" \
   -F "input_language=en" \
   -F "output_language=en"
@@ -338,7 +338,7 @@ backend/
 
 ```bash
 # 1. Upload homework
-curl -X POST "http://localhost:8000/api/homework/upload" \
+curl -X POST "http://192.168.5.99:8000/api/homework/upload" \
   -F "file=@test_image.jpg" \
   -F "input_language=en" \
   -F "output_language=en"
@@ -346,7 +346,7 @@ curl -X POST "http://localhost:8000/api/homework/upload" \
 # Copy the homework_id from response
 
 # 2. Generate solution
-curl -X POST "http://localhost:8000/api/solution/generate" \
+curl -X POST "http://192.168.5.99:8000/api/solution/generate" \
   -H "Content-Type: application/json" \
   -d '{
     "homework_id": "YOUR_HOMEWORK_ID",
@@ -355,7 +355,7 @@ curl -X POST "http://localhost:8000/api/solution/generate" \
   }'
 
 # 3. Download audio
-curl "http://localhost:8000/api/solution/audio/AUDIO_FILENAME.mp3" \
+curl "http://192.168.5.99:8000/api/solution/audio/AUDIO_FILENAME.mp3" \
   --output solution_audio.mp3
 ```
 

@@ -7,7 +7,7 @@ from pathlib import Path
 import traceback
 import logging
 from app.database.mongodb import connect_to_mongo, close_mongo_connection
-from app.routers import homework, solution, practice, flashcard, dashboard, utility
+from app.routers import homework, solution, practice, flashcard, dashboard, utility, feedback, search, settings_route
 from app.config import settings
 
 # Configure detailed logging
@@ -98,25 +98,24 @@ audio_path = Path(settings.STORAGE_PATH) / "audio"
 audio_path.mkdir(parents=True, exist_ok=True)
 app.mount("/audio", StaticFiles(directory=str(audio_path)), name="audio")
 
+# Include all routers at module level
+app.include_router(homework.router)
+app.include_router(solution.router)
+app.include_router(practice.router)
+app.include_router(flashcard.router)
+app.include_router(feedback.router)
+app.include_router(search.router)
+app.include_router(settings_route.router)
+app.include_router(dashboard.router)
+app.include_router(utility.router)
+
 @app.on_event("startup")
 async def startup_db_client():
     await connect_to_mongo()
 
-    # Import routers after MongoDB is connected
-    from app.routers import homework, solution, settings_route, feedback, search
-    app.include_router(homework.router)
-    app.include_router(solution.router)
-    app.include_router(settings_route.router)
-    app.include_router(feedback.router)
-    app.include_router(search.router)
-
 @app.on_event("shutdown")
 async def shutdown_db_client():
     await close_mongo_connection()
-app.include_router(practice.router)
-app.include_router(flashcard.router)
-app.include_router(dashboard.router)
-app.include_router(utility.router)
 
 # Root endpoint
 @app.get("/")

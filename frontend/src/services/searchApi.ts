@@ -17,6 +17,7 @@ export interface HomeworkSearchResult {
   input_language: Language;
   output_language: Language;
   has_solution: boolean;
+  solution_id: string | null;
   created_at: string;
 }
 

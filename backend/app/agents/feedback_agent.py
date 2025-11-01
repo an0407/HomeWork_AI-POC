@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 from datetime import datetime
 from bson import ObjectId
 from app.database.mongodb import get_database
@@ -14,7 +14,7 @@ class FeedbackAgent:
         self,
         solution_id: str,
         rating: int,
-        feedback_text: str,
+        feedback_text: Optional[str],
         was_helpful: bool,
         issues: List[str]
     ) -> Dict:

@@ -47,7 +47,7 @@ class LocalTTS:
 
             tts.save(str(audio_path))
 
-            return f"/audio/{audio_filename}"
+            return f"/api/solution/audio/{audio_filename}"
 
         except Exception as e:
             raise Exception(f"Error generating audio with gTTS: {str(e)}")
